@@ -1,0 +1,4 @@
+{
+    "deepscan.enable": true,
+    "deepcode.uploadApproved": true
+}

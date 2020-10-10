@@ -1,14 +1,25 @@
+/* eslint-disable react/prop-types */
 import React, { useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import { Form, FormGroup, Label, Input, TextArea } from "./ui/Form";
-import Button from "./ui/Button";
-import Message from "./ui/Message";
-import getLocalStorageData from '../utils/getLocalStorageData';
+import { Form, FormGroup, Label, Input, TextArea } from './ui/Form';
+import Button from './ui/Button';
+import Message from './ui/Message';
+
+const InfoWrapper = (props) => {
+  const { status } = props;
+
+  if (status !== null) {
+    if (status === false) {
+      return <Message type="error" text="Title harus diisi"  />;
+    }
+    return <Message type="success" text="Data berhasil disimpan" />;
+  }
+  return <></>;
+};
 
 const AddNoteForm = () => {
   const [state, setState] = useState({ title: '', note: '' });
-  const [isSuccess, setIsSuccess] = useState(false);
-  
+  const [isSuccess, setIsSuccess] = useState(null);
+
   const handleTitleChange = (e) => {
     setState({ ...state, title: e.target.value });
   };
@@ -18,15 +29,22 @@ const AddNoteForm = () => {
   };
 
   const handleSubmit = (e) => {
-    const notes = getLocalStorageData('notes');
+    const requestOptions = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state)
+    };
 
-    const noteId = uuidv4();
+    async function submitData() {
+      const response = await fetch('http://localhost:3001/note', requestOptions);
+      if (response.ok) {
+        setIsSuccess(true);
+      } else {
+        setIsSuccess(false);
+      }
+    }
 
-    notes.push({ ...state, id: noteId });
-
-    localStorage.setItem('notes', JSON.stringify(notes));
-
-    setIsSuccess(true);
+    submitData();
 
     e.preventDefault();
   };
@@ -35,7 +53,7 @@ const AddNoteForm = () => {
 
   return (
     <>
-      {isSuccess && <Message text="Data berhasil disimpan" />}
+      <InfoWrapper status={isSuccess} />
       <Form onSubmit={handleSubmit}>
         <FormGroup>
           <Label>Title</Label>

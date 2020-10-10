@@ -1,25 +1,39 @@
+/* eslint-disable react/prop-types */
+/* eslint-disable no-underscore-dangle */
 import React, { useEffect, useState } from 'react';
 import { useLocation, useHistory } from 'react-router-dom';
 import { Form, FormGroup, Label, Input, TextArea } from './ui/Form';
 import Button from './ui/Button';
-import getLocalStorageData from '../utils/getLocalStorageData';
+import Message from './ui/Message';
+
+const InfoWrapper = (props) => {
+  const { status } = props;
+
+  if (status !== null) {
+    if (status === false) {
+      return <Message type="error" text="Title harus diisi" />;
+    }
+    return <Message type="success" text="Data berhasil disimpan" />;
+  }
+  return <></>;
+};
 
 const EditNoteForm = () => {
   const location = useLocation();
   const history = useHistory();
-  const [allNotes, setAllNotes] = useState(null);
   const [currentNote, setCurrentNote] = useState({ title: '', note: '' });
+  const [isSuccess, setIsSuccess] = useState(null);
 
   useEffect(() => {
-    const notes = getLocalStorageData('notes');
-
-    setAllNotes(notes);
-
     const noteId = location.pathname.replace('/edit/', '');
 
-    const filteredNote = notes.filter((note) => note.id === noteId);
+    async function fetchData() {
+      const response = await fetch(`http://localhost:3001/note/${noteId}`);
+      const data = await response.json();
+      setCurrentNote(data);
+    }
 
-    setCurrentNote(filteredNote[0]);
+    fetchData();
   }, []);
 
   const handleTitleChange = (e) => {
@@ -31,49 +45,64 @@ const EditNoteForm = () => {
   };
 
   const handleSubmit = (e) => {
-    const newNotes = allNotes.map((note) => {
-      if (note.id === currentNote.id) {
-        return { ...note, title: currentNote.title, note: currentNote.note };
-      }
-      return note;
-    });
+    const options = {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(currentNote)
+    };
 
-    localStorage.setItem('notes', JSON.stringify(newNotes));
+    async function submitData() {
+      const response = await fetch(`http://localhost:3001/note/${currentNote._id}`, options);
+      if (response.ok) {
+        setIsSuccess(true);
+      } else {
+        setIsSuccess(false);
+      }
+    }
+
+    submitData();
 
     e.preventDefault();
   };
 
   const handleDeleteNote = () => {
-    const newNotes = allNotes.filter((note) => note.id !== currentNote.id);
+    const options = {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' }
+    };
 
-    setCurrentNote(null);
+    async function deleteData() {
+      const response = await fetch(`http://localhost:3001/note/${currentNote._id}`, options);
+      if (response.ok) {
+        history.push('/');
+      }
+    }
 
-    setAllNotes(newNotes);
-
-    localStorage.setItem('notes', JSON.stringify(newNotes));
-
-    history.push('/');
+    deleteData();
   };
 
   const { title, note } = currentNote;
 
   return (
-    <Form onSubmit={handleSubmit}>
-      <FormGroup>
-        <Label>Title</Label>
-        <Input type="text" name="title" value={title} onChange={handleTitleChange} />
-      </FormGroup>
-      <FormGroup>
-        <Label>Note</Label>
-        <TextArea name="note" rows="12" value={note} onChange={handleNoteChange} />
-      </FormGroup>
-      <FormGroup>
-        <Button type="submit">Save</Button>
-        <Button danger onClick={handleDeleteNote}>
-          Delete
-        </Button>
-      </FormGroup>
-    </Form>
+    <>
+      <InfoWrapper status={isSuccess} />
+      <Form onSubmit={handleSubmit}>
+        <FormGroup>
+          <Label>Title</Label>
+          <Input type="text" name="title" value={title} onChange={handleTitleChange} />
+        </FormGroup>
+        <FormGroup>
+          <Label>Note</Label>
+          <TextArea name="note" rows="12" value={note} onChange={handleNoteChange} />
+        </FormGroup>
+        <FormGroup>
+          <Button type="submit">Save</Button>
+          <Button danger onClick={handleDeleteNote}>
+            Delete
+          </Button>
+        </FormGroup>
+      </Form>
+    </>
   );
 };
 

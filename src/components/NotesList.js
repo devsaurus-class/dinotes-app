@@ -1,7 +1,7 @@
-import React from 'react';
+/* eslint-disable no-underscore-dangle */
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
-import getLocalStorageData from '../utils/getLocalStorageData';
 
 const NotesListContainer = styled.div`
   display: flex;
@@ -25,24 +25,38 @@ const ListItem = styled.li`
 const Separator = styled.hr`
   width: 90%;
   margin: -1px;
-  background-color: #EDF2F7;
-  color: #EDF2F7;
+  background-color: #edf2f7;
+  color: #edf2f7;
 `;
 
 const NotesList = () => {
-  const notes = getLocalStorageData('notes');
+  const [notes, setNotes] = useState(null);
 
-  const listItems = notes.map((note) => {
-    return (
-      <ListItem key={note.id}>
-        <h4>
-          <Link to={`/edit/${note.id}`}>{note.title}</Link>
-        </h4>
-        <p>{note.note.slice(0, 101)}</p>
-        <Separator />
-      </ListItem>
-    );
-  });
+  useEffect(() => {
+
+    async function fetchData() {
+      const response = await fetch('http://localhost:3001/notes');
+      const data = await response.json();
+      setNotes({data});
+    }
+
+    fetchData();
+
+  }, []);
+
+  const listItems =
+    notes &&
+    notes.data.map((note) => {
+      return (
+        <ListItem key={note._id}>
+          <h4>
+            <Link to={`/edit/${note._id}`}>{note.title}</Link>
+          </h4>
+          <p>{note.note.slice(0, 101)}</p>
+          <Separator />
+        </ListItem>
+      );
+    });
 
   return (
     <NotesListContainer>

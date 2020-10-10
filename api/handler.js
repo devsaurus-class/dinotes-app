@@ -25,7 +25,7 @@ exports.getAllNotes = async (req, res, next) => {
 
   try {
     // find all Notes
-    const result = await notesCollection.find().toArray();
+    const result = await notesCollection.find().sort({_id:-1}).toArray();
 
     res.status(200).json(result);
   } catch (error) {
@@ -48,12 +48,16 @@ exports.getNote = async (req, res, next) => {
 
 exports.updateNote = async (req, res, next) => {
   const { notesCollection } = req.app.locals;
+  const { title, note } = req.body;
 
   try {
+    if (!title) {
+      throw new Error('title is missing');
+    }
     // update data collection
     const result = await notesCollection.updateOne(
       { _id: ObjectId(req.params.id) },
-      { $set: { title: req.body.title, note: req.body.note } }
+      { $set: { title, note } }
     );
 
     console.log(result);
